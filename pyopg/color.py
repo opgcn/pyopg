@@ -10,15 +10,16 @@ https://misc.flogisoft.com/bash/tip_colors_and_formatting
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # metadata
 __version__ = '.'.join(map(str, (0, 1, 0)))
-__author__  = 'Lei Li <li.lei03@opg.cn>'
+__author__  = 'Lei Li <i@lilei.tech>'
 __date__    = '2020-11-01'
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 import enum, functools
 
+# import functools.cached_property() new in python 3.8
 if not hasattr(functools, 'cached_property'):
-    import prospect
-    functools.cached_property = prospect.cached_property
+    import new3
+    functools.cached_property = new3.cached_property
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 

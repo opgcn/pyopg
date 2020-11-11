@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # coding: utf-8
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-r"""Prospect features in future Python.
+r"""New features in higher Python versions not in old 3.x versions.
 
-This module supplies features in higher Python versions than 3.6.
+This module supplies features in higher Python versions to old Python 3.x versions.
 """
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # metadata
 __version__ = '.'.join(map(str, (0, 1, 0)))
-__author__  = 'Lei Li <li.lei03@opg.cn>'
+__author__  = 'Lei Li <i@lilei.tech>'
 __date__    = '2020-11-01'
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
