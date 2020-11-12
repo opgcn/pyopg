@@ -16,8 +16,3 @@ __all__     = []
 __version__ = '.'.join(map(str, (0, 1, 0)))
 __author__  = 'Lei Li <li.lei03@opg.cn>'
 __date__    = '2020-11-01'
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# main
-if __name__ == "__main__":
-    pass

@@ -15,10 +15,10 @@ __date__    = '2020-11-01'
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 import enum, functools
-
+print(__name__)
 # import functools.cached_property() new in python 3.8
 if not hasattr(functools, 'cached_property'):
-    import new3
+    from . import new3
     functools.cached_property = new3.cached_property
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
