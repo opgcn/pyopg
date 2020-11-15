@@ -9,14 +9,13 @@ https://misc.flogisoft.com/bash/tip_colors_and_formatting
 """
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # metadata
-__version__ = '.'.join(map(str, (0, 1, 0)))
-__author__  = 'Lei Li <i@lilei.tech>'
-__date__    = '2020-11-01'
+
+from . import __version__, __author__, __date__
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 import enum, functools
-print(__name__)
-# import functools.cached_property() new in python 3.8
+
+# import compatibale functools.cached_property() new in python 3.8
 if not hasattr(functools, 'cached_property'):
     from . import new3
     functools.cached_property = new3.cached_property
@@ -82,8 +81,8 @@ FG = EnumCodes('EnumForegrounds', (
 # Enumeration class for SGR backgrounds
 BG = EnumCodes('EnumBackgrounds', ( (each.name, each.value+10) for each in FG ))
 
-class Renderer(tuple):
-    r"""A renderer as a tuple of SGR codes, aka a palette.
+class Seq(tuple):
+    r"""A renderer as a tuple of SGR codes sequence, aka a palette.
     """
     
     # For CSI (Control Sequence Introducer), the starter `ESC [` is followed by any number (including none) of "parameter bytes", and then finally by a single ender "final byte"(aka `m`).
@@ -109,15 +108,15 @@ class Renderer(tuple):
         """
         return f"{self.csi_starter}{self.csi_attributes}{self.csi_ender}"
         
-    def wrap(self, text, reset=True):
-        r"""Wrap text with CSI sequences, optionally reset all attributes off at the end.
+    def render(self, text, reset=True):
+        r"""Render text with CSI sequences, optionally reset all attributes off at the end.
         """
         return f"{self.csi_seq}{text}{self.csi_resetter if reset else ''}"
         
     def __call__(self, *t, **d):
-        r"""Instance is called, same as `wrap()` does.
+        r"""Instance is called, same as `render()` does.
         """
-        return self.wrap(*t, **d)
+        return self.render(*t, **d)
     
 def get_cheet_sheet_16(styles=STY, backgrounds=BG, foregrounds=FG, col_width=12, col_sep='|'):
     r"""Demonstration of colors and styles in 16-colors terminal mode.
@@ -137,7 +136,7 @@ def get_cheet_sheet_16(styles=STY, backgrounds=BG, foregrounds=FG, col_width=12,
                 sio.write(f"{fg!r:^{col_width}}")
                 for sty in styles:
                     sio.write(f"{col_sep}")
-                    palette = Renderer(sty, bg, fg)
+                    palette = Seq(sty, bg, fg)
                     text = palette.csi_attributes
                     sio.write(palette(f"{text:^{col_width}}"))
                 sio.write(os.linesep)
@@ -146,7 +145,6 @@ def get_cheet_sheet_16(styles=STY, backgrounds=BG, foregrounds=FG, col_width=12,
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # main
 if __name__ == "__main__":
-
     # only demonstrates given styles & colors
     print(
         get_cheet_sheet_16(

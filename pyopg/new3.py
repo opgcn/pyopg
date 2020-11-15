@@ -7,9 +7,8 @@ This module supplies features in higher Python versions to old Python 3.x versio
 """
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # metadata
-__version__ = '.'.join(map(str, (0, 1, 0)))
-__author__  = 'Lei Li <i@lilei.tech>'
-__date__    = '2020-11-01'
+
+from . import __version__, __author__, __date__
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # https://docs.python.org/zh-cn/3/library/functools.html#functools.cached_property
