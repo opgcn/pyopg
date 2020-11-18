@@ -13,7 +13,7 @@ sudo yum -y install python3-pip
 pip3 install --user -U pip setuptools wheel
 ```
 
-After that, install this package in [editable mode](https://pip.pypa.io/en/stable/reference/pip_install/#local-project-installs):
+After that, install or update this package in the [editable mode](https://pip.pypa.io/en/stable/reference/pip_install/#local-project-installs):
 ```bash
 mkdir -p $(python3 -m site --user-base) \
 && cd $(python3 -m site --user-base) \
