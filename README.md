@@ -4,7 +4,7 @@ This project supplies the OPG Python3 common library package `pyopg`.
 
 ## Installion
 
-Minimum *Python version 3.6* is required, as long as latest [PyPA packaging tools](https://packaging.python.org/tutorials/installing-packages/). For instance, we can install them in the [user site packages directory](https://docs.python.org/zh-cn/3/installing/index.html#install-packages-just-for-the-current-user), under latest *Centos 7.x*:
+Python *3.6+* is required, as long as latest [PyPA packaging tools](https://packaging.python.org/tutorials/installing-packages/). For instance, we can install them in the [user site packages directory](https://docs.python.org/zh-cn/3/installing/index.html#install-packages-just-for-the-current-user), under latest *Centos 7.x*:
 
 ```bash
 sudo yum-config-manager --enable updates
