@@ -10,12 +10,13 @@ Minimum *Python version 3.6* is required, as long as latest [PyPA packaging tool
 sudo yum-config-manager --enable updates
 sudo yum makecache
 sudo yum -y install python3-pip
-pip3 install --user --upgrade pip setuptools wheel
+pip3 install --user -U pip setuptools wheel
 ```
 
 After that, install this package in [editable mode](https://pip.pypa.io/en/stable/reference/pip_install/#local-project-installs):
 ```bash
-mkdir -p $(python3 -m site --user-base) && cd $(python3 -m site --user-base)
-pip3 install --user -e "git+https://github.com/opgcn/pyopg.git#egg=pyopg"
+mkdir -p $(python3 -m site --user-base) \
+&& cd $(python3 -m site --user-base) \
+&& pip3 install --user -U -e "git+https://github.com/opgcn/pyopg.git#egg=pyopg"
 ```
 
