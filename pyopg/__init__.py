@@ -3,14 +3,14 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 r"""OPG Python base library.
 
-This package supplies several python3 common library used in OPG.
+See https://github.com/opgcn/pyopg
 """
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # package metadata
 
 __all__     = []
 __version__ = '.'.join(map(str, (0, 1, 0)))
-__author__  = 'Lei Li <li.lei03@opg.cn>'
+__author__  = 'Li Lei'
 __date__    = '2020-11-01'
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

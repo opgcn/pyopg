@@ -20,3 +20,11 @@ mkdir -p $(python3 -m site --user-base) \
 && pip3 install --user -U -e "git+https://github.com/opgcn/pyopg.git#egg=pyopg"
 ```
 
+Finally, you can test some package usage, for example:
+```bash
+python3 -m pyopg.color
+```
+
+## Documention
+
+*TODO*
