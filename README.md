@@ -1,6 +1,6 @@
 # pyopg
 
-This project supplies the OPG Python3 common library package `pyopg`.
+This project supplies the OPG common Python3 base library package `pyopg`.
 
 ## Installion
 

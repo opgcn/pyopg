@@ -13,7 +13,8 @@ from . import __version__, __author__, __date__
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # main
 
-import pprint
-print(f"@__package__={__package__!r} @__name__={__name__!r}")
-pprint.pprint(object=globals(), indent=4)
+if __name__ == "__main__":
+    import pprint
+    print(f"@__package__={__package__!r} @__name__={__name__!r}")
+    pprint.pprint(object=globals(), indent=4)
 
