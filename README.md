@@ -27,4 +27,11 @@ python3 -m pyopg.color
 
 ## Documention
 
-*TODO*
+To generate HTML *pydoc* files locally:
+
+```bash
+mkdir $(python3 -m site --user-base)/docs
+&& cd $(python3 -m site --user-base)/docs
+&& pydoc3 -w $(pydoc3 -k pyopg | cut -d' ' -f1)
+&& ls -al
+```

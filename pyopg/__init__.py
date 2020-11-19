@@ -9,7 +9,7 @@ See https://github.com/opgcn/pyopg
 # package metadata
 
 __all__     = []
-__version__ = '.'.join(map(str, (0, 1, 0)))
+__version__ = '.'.join(map(str, (20, 11, 19)))
 __author__  = 'Li Lei'
 __date__    = '2020-11-01'
 
