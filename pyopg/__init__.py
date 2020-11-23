@@ -17,10 +17,10 @@ __date__    = '2020-11-01'
 # package initialization
 
 # Check Python version requirement.
-_pkg_py_ver = (3, 6)
+_pkg_py_ver = '.'.join(map(str, (3,6)))
 import sys
-if sys.version_info < _pkg_py_ver:
-    raise RuntimeError('Python version >= %s required for package %r!' % ('.'.join(map(str, _pkg_py_ver)), __package__))
+if sys.version < _pkg_py_ver:
+    raise RuntimeError('Python version >= %s required for package %r!' % (_pkg_py_ver, __package__))
 
 # Print package level debug info.
 _pkg_print_debug = False

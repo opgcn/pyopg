@@ -3,15 +3,15 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 r"""Package build script for setuptools.
 
-See https://packaging.python.org/tutorials/packaging-projects/ 
+See:
+- https://packaging.python.org/tutorials/packaging-projects/
+- https://packaging.python.org/guides/distributing-packages-using-setuptools/
 """
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+import pathlib
 import setuptools
 import pyopg as pkg
-
-with open("README.md", "r") as f:
-    long_description = f.read()
 
 setuptools.setup(
     name = pkg.__package__,
@@ -19,10 +19,11 @@ setuptools.setup(
     author = pkg.__author__,
     author_email = "li.lei03@opg.cn",
     description = pkg.__doc__.splitlines()[0],
-    long_description = long_description,
+    long_description = pathlib.Path("README.md").read_text(encoding='utf-8'),
     long_description_content_type = "text/markdown",
     url = 'https://github.com/opgcn/pyopg',
     packages = setuptools.find_packages(),
+    python_requires = "~=" + pkg._pkg_py_ver,
     classifiers = [
         "Development Status :: 4 - Beta",
         "Environment :: Console",
@@ -34,3 +35,4 @@ setuptools.setup(
         "Topic :: Software Development :: Libraries",
     ],
 )
+
