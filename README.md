@@ -1,4 +1,4 @@
-# pyopg
+# ![PYOPG](pyopg.png)
 
 This project supplies the OPG common Python3 base library package `pyopg`.
 

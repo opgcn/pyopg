@@ -19,9 +19,10 @@ setuptools.setup(
     author = pkg.__author__,
     author_email = "li.lei03@opg.cn",
     description = pkg.__doc__.splitlines()[0],
-    long_description = pathlib.Path("README.md").read_text(encoding='utf-8'),
+    long_description = (pathlib.Path(__file__).parent.resolve()/"README.md").read_text(encoding='utf-8'),
     long_description_content_type = "text/markdown",
     url = 'https://github.com/opgcn/pyopg',
+    license_files = ['LICENSE'],
     packages = setuptools.find_packages(),
     python_requires = "~=" + pkg._pkg_py_ver,
     classifiers = [
