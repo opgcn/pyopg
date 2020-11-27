@@ -26,17 +26,17 @@ if not hasattr(functools, 'cached_property'):
 class EnumCodes(enum.Enum):
     r"""Enumeration base class for SGR codes.
     """
-    @classmethod
-    def items(cls):
-        r"""A generator of (name, value) pairs like dict.items().
-        """
-        return ((each.name, each.value) for each in cls)
-        
     @enum.DynamicClassAttribute
     def pair(self):
         r"""A tuple of current enumeration member's (name, value).
         """
         return self.name, self.value
+        
+    @classmethod
+    def items(cls):
+        r"""A generator of (name, value) pairs like dict.items().
+        """
+        return (each.pair for each in cls)
         
     def __repr__(self):
         r"""Short description in `repr()`.
@@ -122,16 +122,16 @@ def get_cheet_sheet_16(styles=STY, backgrounds=BG, foregrounds=FG, col_width=12,
     r"""Demonstration of colors and styles in 16-colors terminal mode.
     """
     import io, os
-    with io.StringIO() as sio:
-        sio.write(f"ANSI 16-Color Cheet Sheet {os.linesep}")
-        sio.write(f"@styles: {styles}{os.linesep}")
-        sio.write(f"@backgrounds: {backgrounds}{os.linesep}")
-        sio.write(f"@foregrounds: {foregrounds}{os.linesep}")
+    with io.StringIO(newline=None) as sio:
+        sio.write(f"ANSI 16-Color Cheet Sheet\n\n")
+        sio.write(f"@styles: {styles}\n\n")
+        sio.write(f"@backgrounds: {backgrounds}\n\n")
+        sio.write(f"@foregrounds: {foregrounds}\n")
         for bg in backgrounds:
-            sio.write(f"{os.linesep}Table of @BG={bg!r}{os.linesep}{'@FG & @STY':^{col_width}}")
+            sio.write(f"\nTable of @BG={bg!r}\n{'@FG & @STY':^{col_width}}")
             for sty in styles:
                 sio.write(f"{col_sep}{sty!r:^{col_width}}")
-            sio.write(os.linesep)
+            sio.write('\n')
             for fg in foregrounds:
                 sio.write(f"{fg!r:^{col_width}}")
                 for sty in styles:
@@ -139,7 +139,7 @@ def get_cheet_sheet_16(styles=STY, backgrounds=BG, foregrounds=FG, col_width=12,
                     palette = Seq(sty, bg, fg)
                     text = palette.csi_attributes
                     sio.write(palette(f"{text:^{col_width}}"))
-                sio.write(os.linesep)
+                sio.write('\n')
         return sio.getvalue()
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
