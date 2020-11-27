@@ -42,11 +42,6 @@ class EnumCodes(int, enum.Enum):
         r"""Short description of member.
         """
         return f"{self.__class__.__name__}.{self.name}:{self.value}"
-
-    def __str__(self):
-        r"""String of member's value.
-        """
-        return str(self.value)
         
 # Enumeration class for SGR styles
 STY = EnumCodes('STY', (
@@ -97,9 +92,9 @@ class Seq(tuple):
     csi_resetter = csi_starter + csi_ender
     
     def __new__(cls, *codes):
-        r"""Create the object from SGR codes (can be enum.Enum instances, int numbers, strings, etc.).
+        r"""Create the object from SGR codes.
         """
-        return super().__new__(cls, codes)
+        return super().__new__(cls, map(int, codes))
         
     @functools.cached_property
     def csi_attributes(self):
@@ -117,6 +112,11 @@ class Seq(tuple):
         r"""Render text with CSI sequences, optionally reset all attributes off at the end.
         """
         return f"{self.csi_seq}{text}{self.csi_resetter if reset else ''}"
+    
+    def __call__(self, *t, **d):
+        r"""Instance is called, same as `render()` does.
+        """
+        return self.render(*t, **d)
         
     def __str__(self):
         r"""Same as `csi_seq` property.
@@ -126,35 +126,28 @@ class Seq(tuple):
     def __repr__(self):
         r"""Short description of self.
         """
-        return self.__class__.__name__+super().__repr__().replace(' ','')
-    
-    def __call__(self, *t, **d):
-        r"""Instance is called, same as `render()` does.
-        """
-        return self.render(*t, **d)
+        return self.__class__.__name__ + super().__repr__().replace(' ','')
     
 def get_cheet_sheet_16(styles=STY, backgrounds=BG, foregrounds=FG, col_width=16, col_sep='|'):
     r"""Demonstration of colors and styles in 16-colors terminal mode.
     """
     import io, os
     with io.StringIO(newline=None) as sio:
-        sio.write(f"ANSI 16-Color Cheet Sheet\n\n")
-        sio.write(f"@styles: {styles}\n\n")
-        sio.write(f"@backgrounds: {backgrounds}\n\n")
-        sio.write(f"@foregrounds: {foregrounds}\n")
+        sio.write(f"ANSI 16-Color Cheet Sheet\n")
+        sio.write(f"\n@styles: {styles}\n")
+        sio.write(f"\n@backgrounds: {backgrounds}\n")
+        sio.write(f"\n@foregrounds: {foregrounds}")
         for bg in backgrounds:
-            sio.write(f"\nTable of @background={bg!r}\n{'@FG & @STY':^{col_width}}")
+            sio.write(f"\n\nTable of @background={bg!r}\n{'@FG & @STY':^{col_width}}")
             for sty in styles:
                 sio.write(f"{col_sep}{sty!r:^{col_width}}")
-            sio.write('\n')
             for fg in foregrounds:
-                sio.write(f"{fg!r:^{col_width}}")
+                sio.write(f"\n{fg!r:^{col_width}}")
                 for sty in styles:
                     sio.write(f"{col_sep}")
-                    palette = Seq(sty, bg, fg)
-                    text = palette.csi_attributes
-                    sio.write(palette(f"{text:^{col_width}}"))
-                sio.write('\n')
+                    seq = Seq(sty, bg, fg)
+                    sio.write(seq(f"{seq.csi_attributes:^{col_width}}"))
+        sio.write('\n')
         return sio.getvalue()
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -164,7 +157,7 @@ if __name__ == "__main__":
     print(
         get_cheet_sheet_16(
             styles      = [STY(n) for n in (0,1,2,4,5,7)],
-            backgrounds = [x for x in BG if x.value != 49],
-            foregrounds = [x for x in FG if x.value != 39],
+            backgrounds = [x for x in BG if x != 49],
+            foregrounds = [x for x in FG if x != 39],
         )
     )
