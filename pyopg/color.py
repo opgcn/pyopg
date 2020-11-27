@@ -23,7 +23,7 @@ if not hasattr(functools, 'cached_property'):
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 @enum.unique
-class EnumCodes(enum.Enum):
+class EnumCodes(int, enum.Enum):
     r"""Enumeration base class for SGR codes.
     """
     @enum.DynamicClassAttribute
@@ -36,15 +36,20 @@ class EnumCodes(enum.Enum):
     def items(cls):
         r"""A generator of (name, value) pairs like dict.items().
         """
-        return (each.pair for each in cls)
+        return (member.pair for member in cls)
         
     def __repr__(self):
-        r"""Short description in `repr()`.
+        r"""Short description of member.
         """
-        return f"{self.name}:{self.value}"
+        return f"{self.__class__.__name__}.{self.name}:{self.value}"
+
+    def __str__(self):
+        r"""String of member's value.
+        """
+        return str(self.value)
         
 # Enumeration class for SGR styles
-STY = EnumCodes('EnumStyles', (
+STY = EnumCodes('STY', (
     ('RESET',       0),
     ('BOLD',        1),
     ('DIM',         2),
@@ -58,7 +63,7 @@ STY = EnumCodes('EnumStyles', (
 ))
 
 # Enumeration class for SGR foregrounds
-FG = EnumCodes('EnumForegrounds', (
+FG = EnumCodes('FG', (
     ('DEFAULT',     39),
     ('BLACK',       30),
     ('RED',         31),
@@ -79,7 +84,7 @@ FG = EnumCodes('EnumForegrounds', (
 ))
 
 # Enumeration class for SGR backgrounds
-BG = EnumCodes('EnumBackgrounds', ( (each.name, each.value+10) for each in FG ))
+BG = EnumCodes('BG', ( (each.name, each.value+10) for each in FG ))
 
 class Seq(tuple):
     r"""A renderer as a tuple of SGR codes sequence, aka a palette.
@@ -100,25 +105,35 @@ class Seq(tuple):
     def csi_attributes(self):
         r"""Several attributes can be set in the same sequence, separated by semicolons.
         """
-        return ';'.join(f"{x.value}" if isinstance(x, enum.Enum) else f"{x}" for x in self)
+        return ';'.join(map(str, self))
         
     @functools.cached_property
     def csi_seq(self):
         r"""A escaped CSI sequence of all SGR codes.
         """
         return f"{self.csi_starter}{self.csi_attributes}{self.csi_ender}"
-        
+    
     def render(self, text, reset=True):
         r"""Render text with CSI sequences, optionally reset all attributes off at the end.
         """
         return f"{self.csi_seq}{text}{self.csi_resetter if reset else ''}"
         
+    def __str__(self):
+        r"""Same as `csi_seq` property.
+        """
+        return self.csi_seq
+
+    def __repr__(self):
+        r"""Short description of self.
+        """
+        return self.__class__.__name__+super().__repr__().replace(' ','')
+    
     def __call__(self, *t, **d):
         r"""Instance is called, same as `render()` does.
         """
         return self.render(*t, **d)
     
-def get_cheet_sheet_16(styles=STY, backgrounds=BG, foregrounds=FG, col_width=12, col_sep='|'):
+def get_cheet_sheet_16(styles=STY, backgrounds=BG, foregrounds=FG, col_width=16, col_sep='|'):
     r"""Demonstration of colors and styles in 16-colors terminal mode.
     """
     import io, os
@@ -128,7 +143,7 @@ def get_cheet_sheet_16(styles=STY, backgrounds=BG, foregrounds=FG, col_width=12,
         sio.write(f"@backgrounds: {backgrounds}\n\n")
         sio.write(f"@foregrounds: {foregrounds}\n")
         for bg in backgrounds:
-            sio.write(f"\nTable of @BG={bg!r}\n{'@FG & @STY':^{col_width}}")
+            sio.write(f"\nTable of @background={bg!r}\n{'@FG & @STY':^{col_width}}")
             for sty in styles:
                 sio.write(f"{col_sep}{sty!r:^{col_width}}")
             sio.write('\n')
