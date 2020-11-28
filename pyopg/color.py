@@ -45,22 +45,22 @@ class EnumCodes(int, enum.Enum):
         
 # Enumeration class for SGR styles
 STY = EnumCodes('STY', (
-    ('RESET',       0),
-    ('BOLD',        1),
-    ('DIM',         2),
-    ('ITALIC',      3),
-    ('UNDERLINED',  4),
-    ('BLINKED',     5),
-    ('RAPID',       6),
-    ('REVERSED',    7),
-    ('HIDDEN',      8),
-    ('CROSSED',     9),
+    ('RESET',       0), # All attributes off
+    ('BOLD',        1), # Bold or increased intensity
+    ('DIM',         2), # May be implemented as a light font weight like bold
+    ('ITALIC',      3), # not widely supported, treated as inverse or blink
+    ('UNDER',       4), # Underline
+    ('BLINK',       5), # less than 150 per minute
+    ('RAPID',       6), # not widely supported, 150+ per minute
+    ('INVERT',      7), # swap fg and bg colors, aka reversed
+    ('HIDE',        8), # not widely supported, aka Conceal
+    ('CROSS',       9), # not widely supported, marked as deletion
 ))
 
 # Enumeration class for SGR foregrounds
 FG = EnumCodes('FG', (
     ('DEFAULT',     39),
-    ('BLACK',       30),
+    ('BLACK',       30), # without 'B_' indicates 'normal'
     ('RED',         31),
     ('GREEN',       32),
     ('YELLOW',      33),
@@ -68,14 +68,14 @@ FG = EnumCodes('FG', (
     ('MAGENTA',     35),
     ('CYAN',        36),
     ('WHITE',       37),
-    ('BLACK_B',     90),
-    ('RED_B',       91),
-    ('GREEN_B',     92),
-    ('YELLOW_B',    93),
-    ('BLUE_B',      94),
-    ('MAGENTA_B',   95),
-    ('CYAN_B',      96),
-    ('WHITE_B',     97),
+    ('B_BLACK',     90), # with 'B_' indicates 'bright'
+    ('B_RED',       91),
+    ('B_GREEN',     92),
+    ('B_YELLOW',    93),
+    ('B_BLUE',      94),
+    ('B_MAGENTA',   95),
+    ('B_CYAN',      96),
+    ('B_WHITE',     97),
 ))
 
 # Enumeration class for SGR backgrounds
@@ -132,13 +132,16 @@ def get_cheet_sheet_16(styles=STY, backgrounds=BG, foregrounds=FG, col_width=16,
     r"""Demonstration of colors and styles in 16-colors terminal mode.
     """
     import io, os
+    seqKey=Seq(STY.DIM, STY.UNDER)
+    seqTitle=Seq(STY.BOLD, STY.INVERT)
     with io.StringIO(newline=None) as sio:
-        sio.write(f"ANSI 16-Color Cheet Sheet\n")
-        sio.write(f"\n@styles: {styles}\n")
-        sio.write(f"\n@backgrounds: {backgrounds}\n")
-        sio.write(f"\n@foregrounds: {foregrounds}")
+        sio.write(seqTitle(f"ANSI 16-Color Cheet Sheet\n"))
+        sio.write(seqKey(f"\n@styles: {styles}\n"))
+        sio.write(seqKey(f"\n@backgrounds: {backgrounds}\n"))
+        sio.write(seqKey(f"\n@foregrounds: {foregrounds}"))
         for bg in backgrounds:
-            sio.write(f"\n\nTable of @background={bg!r}\n{'@FG & @STY':^{col_width}}")
+            sio.write(seqTitle(f"\n\nTable of @background = {bg!r}\n"))
+            sio.write(seqKey(f"{'@FG & @STY':^{col_width}}"))
             for sty in styles:
                 sio.write(f"{col_sep}{sty!r:^{col_width}}")
             for fg in foregrounds:
@@ -157,7 +160,7 @@ if __name__ == "__main__":
     print(
         get_cheet_sheet_16(
             styles      = [STY(n) for n in (0,1,2,4,5,7)],
-            backgrounds = [x for x in BG if x != 49],
+            backgrounds = [x for x in BG if x is not BG.DEFAULT],
             foregrounds = [x for x in FG if x != 39],
         )
     )
