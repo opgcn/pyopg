@@ -13,7 +13,7 @@ https://misc.flogisoft.com/bash/tip_colors_and_formatting
 from . import __version__, __author__, __date__
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-import enum, functools
+import enum, itertools, functools
 
 # import compatibale functools.cached_property() new in python 3.8
 if not hasattr(functools, 'cached_property'):
@@ -31,18 +31,18 @@ class EnumCodes(int, enum.Enum):
         r"""A tuple of current enumeration member's (name, value).
         """
         return self.name, self.value
-        
+
     @classmethod
     def items(cls):
         r"""A generator of (name, value) pairs like dict.items().
         """
         return (member.pair for member in cls)
-        
+
     def __repr__(self):
         r"""Short description of member.
         """
         return f"{self.__class__.__name__}.{self.name}:{self.value}"
-        
+
 # Enumeration class for SGR styles
 STY = EnumCodes('STY', (
     ('RESET',       0), # All attributes off
@@ -84,40 +84,40 @@ BG = EnumCodes('BG', ( (each.name, each.value+10) for each in FG ))
 class Seq(tuple):
     r"""A renderer as a tuple of SGR codes sequence, aka a palette.
     """
-    
+
     # For CSI (Control Sequence Introducer), the starter `ESC [` is followed by any number (including none) of "parameter bytes", and then finally by a single ender "final byte"(aka `m`).
     csi_starter, csi_ender = "\x1b[", "m"
-    
+
     # If no codes are given, `CSI m` is treated as `CSI 0 m` (reset / normal)
     csi_resetter = csi_starter + csi_ender
-    
+
     def __new__(cls, *codes):
         r"""Create the object from SGR codes.
         """
         return super().__new__(cls, map(int, codes))
-        
+
     @functools.cached_property
     def csi_attributes(self):
         r"""Several attributes can be set in the same sequence, separated by semicolons.
         """
         return ';'.join(map(str, self))
-        
+
     @functools.cached_property
     def csi_seq(self):
         r"""A escaped CSI sequence of all SGR codes.
         """
         return f"{self.csi_starter}{self.csi_attributes}{self.csi_ender}"
-    
+
     def render(self, text, reset=True):
         r"""Render text with CSI sequences, optionally reset all attributes off at the end.
         """
         return f"{self.csi_seq}{text}{self.csi_resetter if reset else ''}"
-    
+
     def __call__(self, *t, **d):
         r"""Instance is called, same as `render()` does.
         """
         return self.render(*t, **d)
-        
+
     def __str__(self):
         r"""Same as `csi_seq` property.
         """
@@ -127,20 +127,31 @@ class Seq(tuple):
         r"""Short description of self.
         """
         return self.__class__.__name__ + super().__repr__().replace(' ','')
-    
+
+    def __add__(self, other):
+        r"""Implement self + other.
+        """
+        return self.__class__(*itertools.chain(self, other))
+
+    def __radd__(self, other):
+        r"""Implement other + self.
+        """
+        return self.__class__(*itertools.chain(other, self))
+
 def get_cheet_sheet_16(styles=STY, backgrounds=BG, foregrounds=FG, col_width=16, col_sep='|'):
     r"""Demonstration of colors and styles in 16-colors terminal mode.
     """
     import io, os
     seqKey=Seq(STY.DIM, STY.UNDER)
     seqTitle=Seq(STY.BOLD, STY.INVERT)
+    table_width=(len(styles)+1)*(col_width+1)-1
     with io.StringIO(newline=None) as sio:
-        sio.write(seqTitle(f"ANSI 16-Color Cheet Sheet\n"))
+        sio.write(seqTitle(f"{'ANSI 16-Color Cheet Sheet'.center(table_width)}\n"))
         sio.write(seqKey(f"\n@styles: {styles}\n"))
         sio.write(seqKey(f"\n@backgrounds: {backgrounds}\n"))
         sio.write(seqKey(f"\n@foregrounds: {foregrounds}"))
         for bg in backgrounds:
-            sio.write(seqTitle(f"\n\nTable of @background = {bg!r}\n"))
+            sio.write(seqTitle(f"\n\n{'Table of @background = {bg!r}'.center(table_width)}\n"))
             sio.write(seqKey(f"{'@FG & @STY':^{col_width}}"))
             for sty in styles:
                 sio.write(f"{col_sep}{sty!r:^{col_width}}")
