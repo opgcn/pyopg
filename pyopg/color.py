@@ -29,7 +29,6 @@ class EnumCodes(int, enum.Enum):
     def __init__(self, *t, **d):
         r"""Code must be in range 0 <= x < 256.
         """
-        print(f"{t} {d}")
         if not self.value in range(256):
             raise ValueError(f"Code element {self!r} not in range 0 <= x < 256.")
 
