@@ -26,6 +26,13 @@ if not hasattr(functools, 'cached_property'):
 class EnumCodes(int, enum.Enum):
     r"""Enumeration base class for SGR codes.
     """
+    def __init__(self, *t, **d):
+        r"""Code must be in range 0 <= x < 256.
+        """
+        print(f"{t} {d}")
+        if not self.value in range(256):
+            raise ValueError(f"Code element {self!r} not in range 0 <= x < 256.")
+
     @enum.DynamicClassAttribute
     def pair(self):
         r"""A tuple of current enumeration member's (name, value).
@@ -41,7 +48,7 @@ class EnumCodes(int, enum.Enum):
     def __repr__(self):
         r"""Short description of member.
         """
-        return f"{self.__class__.__name__}.{self.name}:{self.value}"
+        return f"{self.__class__.__qualname__}.{self.name}:{self.value}"
 
 # Enumeration class for SGR styles
 STY = EnumCodes('STY', (
@@ -81,8 +88,8 @@ FG = EnumCodes('FG', (
 # Enumeration class for SGR backgrounds
 BG = EnumCodes('BG', ( (each.name, each.value+10) for each in FG ))
 
-class Seq(tuple):
-    r"""A renderer as a tuple of SGR codes sequence, aka a palette.
+class Seq(bytes):
+    r"""A SGR codes sequence, aka a palette, as a renderer.
     """
 
     # For CSI (Control Sequence Introducer), the starter `ESC [` is followed by any number (including none) of "parameter bytes", and then finally by a single ender "final byte"(aka `m`).
@@ -92,7 +99,7 @@ class Seq(tuple):
     csi_resetter = csi_starter + csi_ender
 
     def __new__(cls, *codes):
-        r"""Create the object from SGR codes.
+        r"""Create the object from SGR codes, each must be int convertable and 0 <= x < 256.
         """
         return super().__new__(cls, map(int, codes))
 
@@ -126,7 +133,7 @@ class Seq(tuple):
     def __repr__(self):
         r"""Short description of self.
         """
-        return self.__class__.__name__ + super().__repr__().replace(' ','')
+        return f"{self.__class__.__qualname__}({','.join(map(str, self))})"
 
     def __add__(self, other):
         r"""Implement self + other.
