@@ -49,40 +49,45 @@ def reprExc(exc):
     """
     return f"repr={exc!r} context={exc.__context__!r} suppress_context={exc.__suppress_context__!r} cause={exc.__cause__!r}"
 
-class ContextDecorator(contextlib.ContextDecorator):
-    r"""A logging context manager also can be used as a decorator.
+class Tracker(contextlib.ContextDecorator):
+    r"""A tracker to log starting and finishing as a context manager or a decorator.
+
+    Like https://docs.python.org/zh-cn/3/library/contextlib.html#using-a-context-manager-as-a-function-decorator , but both exceptions and function invocation details are included.
     """
     def __init__(self, logger, level=logging.DEBUG, *t, **d):
         r"""Initialization.
         """
         self.__logger = logger
         self.__level = level
-        self.__at = None
+        self.__invocation = None
         super().__init__(*t, **d)
 
     def __str__(self):
-        r"""Logging location string as <module>:<lineno> for context manager, and as <func>(<args>) for decorator.
+        r"""Logging invocation string as <module>:<lineno> for context manager, and as <func>(<args>) for decorator.
         """
-        return self.__at
-        
+        return self.__invocation
+
     def __call__(self, func):
-        r"""Syntactic sugar changed decorator to context manager.
+        r"""Syntactic sugar treats context manager as decorator.
+
+        Note that there is one additional limitation when using context managers as function decorators: there's no way to access the return value of __enter__()
         """
+        # __call__(func)(*t, **d) -> _wrapper(*t, **d)
         @functools.wraps(func)
-        def inner(*args, **kwds):
-            if self.__at is None: # this class is used as a decorator
-                self.__at = f"{func.__module__}.{func.__qualname__}({reprArgs(*args, **kwds)})"
+        def _wrapper(*t, **d):
+            if self.__invocation is None: # this class is used as a decorator
+                self.__invocation = f"{func.__module__}.{func.__qualname__}({reprArgs(*t, **d)})"
             with self._recreate_cm():
-                return func(*args, **kwds)
-        return inner
-        
+                return func(*t, **d) # original func() is 'wrapped function'
+        return _wrapper # from __call__()
+
     def __enter__(self):
         r"""Enter method returns self for representation in with clause.
         """
-        if self.__at is None: # this class is used as a context manager
+        if self.__invocation is None: # this class is used as a context manager
             frameInfo = inspect.stack()[1]
-            self.__at = f"with@{frameInfo.frame.f_globals.get('__name__')}:{frameInfo.lineno}"
-        logger.log(self.__level, f'{self} entered')
+            self.__invocation = f"with@{frameInfo.frame.f_globals.get('__name__')}:{frameInfo.lineno}"
+        logger.log(self.__level, f'{self} entering')
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -94,8 +99,8 @@ class ContextDecorator(contextlib.ContextDecorator):
 @contextlib.contextmanager
 def context(logger, level=logging.DEBUG):
     r'''A context manager supports longging on code block begin and end with given logger, level and name.
-    
-    Deprecated, use `ContextDecorator` instead!
+
+    Deprecated, use `Tracker` instead!
     '''
     frameInfo = inspect.stack()[2]
     ctx = f"with@{frameInfo.frame.f_globals.get('__name__')}:{frameInfo.lineno}"
@@ -110,24 +115,25 @@ def context(logger, level=logging.DEBUG):
 
 def decorator(logger, level=logging.DEBUG):
     r'''A decorator wraps longging on function call's begin and end with given logger and level.
-    
-    Deprecated, use `ContextDecorator` instead!
+
+    Deprecated, use `Tracker` instead!
     '''
-    def inner(func):
+    # decorator(logger)(func)(*t, **d) -> _inner_decorator(func)(*t, **d) -> _wrapper(*t, **d)
+    def _inner_decorator(func):
         @functools.wraps(func)
-        def wrapper(*args, **kwds):
-            at = f"{func.__module__}.{func.__qualname__}({reprArgs(*args, **kwds)})"
-            logger.log(level, f'{at} entering')
+        def _wrapper(*t, **d):
+            invocation = f"{func.__module__}.{func.__qualname__}({reprArgs(*t, **d)})"
+            logger.log(level, f'{invocation} entering')
             try:
-                result = func(*args, **kwds)
+                _func_result = func(*t, **d) # original func() is 'wrapped function'
             except Exception as exc:
-                logger.log(level, f'{at} raised: {exc!r}')
+                logger.log(level, f'{invocation} raised: {exc!r}')
                 raise
             else:
-                logger.log(level, f'{at} exited')
-                return result
-        return wrapper
-    return inner
+                logger.log(level, f'{invocation} exited')
+                return _func_result # from _wrapper()
+        return _wrapper # from _inner_decorator()
+    return _inner_decorator # from decorator()
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # main
@@ -137,10 +143,10 @@ if __name__ == "__main__":
     logger.addHandler(logging.NullHandler()) # as lib
     logger.addHandler(handler_color) # as app
     logger.setLevel(logging.DEBUG)
-    
+
     logger.info('here we demonstrates')
-    
-    for each in (ContextDecorator, context):
+
+    for each in (Tracker, context):
         def f():
             try:
                 with each(logger=logger) as ctx:
@@ -150,17 +156,19 @@ if __name__ == "__main__":
             except Exception as exc:
                 logger.warning(f'caught exception: {reprExc(exc)}')
         f()
-        
-    for each in (ContextDecorator, decorator):
+
+    for each in (Tracker, decorator):
         try:
             @each(logger=logger)
             def f(a=1, b=2, *t, **d):
+                r"""This is some function.
+                """
                 logger.info(f'now works in some function')
                 raise RuntimeWarning('exc raised in a function')
                 return a+b
+            logger.info(f'__name__ of f() is {f.__name__!r}')
             f(10, 20, 30, z=100)
         except Exception as exc:
             logger.warning(f'caught exception: {reprExc(exc)}')
-        
-        
-        
+
+    logger.info('here we finished demonstration')
