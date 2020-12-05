@@ -53,6 +53,7 @@ class Tracker(contextlib.ContextDecorator):
     r"""A tracker to log starting and finishing as a context manager or a decorator.
 
     Like https://docs.python.org/zh-cn/3/library/contextlib.html#using-a-context-manager-as-a-function-decorator , but both exceptions and function invocation details are included.
+    Deprecated: use `context()` and `decorator()` respectivly.
     """
     def __init__(self, logger, level=logging.DEBUG, *t, **d):
         r"""Initialization.
@@ -99,8 +100,6 @@ class Tracker(contextlib.ContextDecorator):
 @contextlib.contextmanager
 def context(logger, level=logging.DEBUG):
     r'''A context manager supports longging on code block begin and end with given logger, level and name.
-
-    Deprecated, use `Tracker` instead!
     '''
     frameInfo = inspect.stack()[2]
     ctx = f"with@{frameInfo.frame.f_globals.get('__name__')}:{frameInfo.lineno}"
@@ -115,25 +114,75 @@ def context(logger, level=logging.DEBUG):
 
 def decorator(logger, level=logging.DEBUG):
     r'''A decorator wraps longging on function call's begin and end with given logger and level.
-
-    Deprecated, use `Tracker` instead!
     '''
     # decorator(logger)(func)(*t, **d) -> _inner_decorator(func)(*t, **d) -> _wrapper(*t, **d)
     def _inner_decorator(func):
         @functools.wraps(func)
         def _wrapper(*t, **d):
             invocation = f"{func.__module__}.{func.__qualname__}({reprArgs(*t, **d)})"
-            logger.log(level, f'{invocation} entering')
+            logger.log(level, f'{invocation} starting')
             try:
-                _func_result = func(*t, **d) # original func() is 'wrapped function'
+                result = func(*t, **d) # original func() is 'wrapped function'
             except Exception as exc:
                 logger.log(level, f'{invocation} raised: {exc!r}')
                 raise
             else:
-                logger.log(level, f'{invocation} exited')
-                return _func_result # from _wrapper()
+                logger.log(level, f'{invocation} returned: {result!r}')
+                return result # from _wrapper()
         return _wrapper # from _inner_decorator()
     return _inner_decorator # from decorator()
+
+class DataDescriptor:
+    r'''A data-descriptor with logging on its access.
+    
+    - https://docs.python.org/zh-cn/3/reference/datamodel.html#descriptors
+    - https://docs.python.org/zh-cn/3/howto/descriptor.html
+    - https://www.python.org/dev/peps/pep-0252/#specification-of-the-attribute-descriptor-api
+    '''
+    def __init__(self, logger, level=logging.DEBUG, doc=None):
+        r'''Initialize with logger.
+        '''
+        self.__logger = logger
+        self.__level = level
+        self.__objclass__, self.__name__, self.__doc__ = None, None, doc # PEP-252
+
+    def __set_name__(self, owner, name):
+        r"""Called at the time the owning class owner is created. The descriptor has been assigned to name.
+        
+        __set_name__() is only called implicitly as part of the type constructor, so it will need to be called explicitly with the appropriate parameters when a descriptor is added to a class after initial creation.
+        """
+        self.__objclass__, self.__name__ = owner, name
+        if self.__doc__ is None:
+            self.__doc__ = repr(self)
+        self.__logger.log(self.__level, f"{self} constructed")
+
+    def _check_set_name(self, instance):
+        r"""Check self.__set_name__() is called.
+        """
+        if not all((self.__objclass__, self.__name__)):
+            raise AttributeError(f"{self.__class__.__qualname__}().__set_name__() not called for instance {instance!r} of type {type(instance)}")
+
+    def __repr__(self):
+        r"""Representation as 'OwnerName.AttributeName=SelfClassName()'.
+        """
+        return f"<{self.__objclass__.__qualname__}.{self.__name__}={self.__class__.__qualname__}()>"
+
+    def __get__(self, instance, owner=None):
+        self.__logger.log(self.__level, f'{self} getting {instance!r}')
+        self._check_set_name(instance)
+        if instance is None: # class-binding
+            raise AttributeError(f"{self} does not support class-binding!")
+        return instance.__dict__[self]
+
+    def __set__(self, instance, value):
+        self.__logger.log(self.__level, f'{self} setting {instance!r} to {value!r}')
+        self._check_set_name(instance)
+        instance.__dict__[self] = value
+
+    def __delete__(self, instance):
+        self.__logger.log(self.__level, f'{self} del {instance!r}')
+        self._check_set_name(instance)
+        del instance.__dict__[self]
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # main
@@ -144,31 +193,50 @@ if __name__ == "__main__":
     logger.addHandler(handler_color) # as app
     logger.setLevel(logging.DEBUG)
 
-    logger.info('here we demonstrates')
+    logger.info('here we go demos')
 
-    for each in (Tracker, context):
-        def f():
-            try:
-                with each(logger=logger) as ctx:
-                    logger.info(f'now works in {ctx}')
-                    raise RuntimeWarning('code block raised this exception')
-                    print("this satement will never run!")
-            except Exception as exc:
-                logger.warning(f'caught exception: {reprExc(exc)}')
-        f()
-
-    for each in (Tracker, decorator):
+    logger.info('now demonstrates context manager')
+    def f():
         try:
-            @each(logger=logger)
-            def f(a=1, b=2, *t, **d):
-                r"""This is some function.
-                """
-                logger.info(f'now works in some function')
-                raise RuntimeWarning('exc raised in a function')
-                return a+b
-            logger.info(f'__name__ of f() is {f.__name__!r}')
-            f(10, 20, 30, z=100)
+            with context(logger=logger) as ctx:
+                logger.info(f'now works in {ctx}')
+                raise RuntimeWarning('code block raised this exception')
+                print("this satement will never run!")
         except Exception as exc:
             logger.warning(f'caught exception: {reprExc(exc)}')
+    f()
+
+    logger.info('now demonstrates decorator')
+    try:
+        @decorator(logger=logger)
+        def f(a=1, b=2, *t, **d):
+            r"""This is some function.
+            """
+            logger.info(f'now works in some function')
+            raise RuntimeWarning('exc raised in a function')
+            return a+b
+        logger.info(f'__name__ of f() is {f.__name__!r}')
+        f(10, 20, 30, z=100)
+    except Exception as exc:
+        logger.warning(f'caught exception: {reprExc(exc)}')
+
+    logger.info('now demonstrates DataDescriptor')
+
+    class C:
+        a = DataDescriptor(logger=logger, doc='this is a')
+        b = DataDescriptor(logger=logger)
+    c = C()
+    logger.info(f"C.__dict__={C.__dict__}")
+    logger.info(f"c.__dict__={c.__dict__}")
+    c.a = 1
+    logger.info(f"c.__dict__={c.__dict__}")
+    logger.info(f"get c.a is {c.a!r}")
+    del C.a
+    c.a=2
+    logger.info(f"C.__dict__={C.__dict__}")
+    logger.info(f"c.__dict__={c.__dict__}")
+    logger.info(f"get c.a is {c.a!r}")
+
+
 
     logger.info('here we finished demonstration')
