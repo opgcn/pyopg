@@ -11,12 +11,7 @@ This module provides logging utils for human beings.
 from . import __version__, __author__, __date__
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-import functools, itertools, contextlib, inspect, logging, weakref
-
-# import compatibale functools.cached_property() new in python 3.8
-if not hasattr(functools, 'cached_property'):
-    from . import new3
-    functools.cached_property = new3.cached_property
+import functools, itertools, contextlib, inspect, logging
 
 from . import color
 
@@ -132,58 +127,6 @@ def decorator(logger, level=logging.DEBUG):
         return _wrapper # from _inner_decorator()
     return _inner_decorator # from decorator()
 
-class DataDescriptor:
-    r'''A data-descriptor with logging on its access.
-    
-    - https://docs.python.org/zh-cn/3/reference/datamodel.html#descriptors
-    - https://docs.python.org/zh-cn/3/howto/descriptor.html
-    - https://www.python.org/dev/peps/pep-0252/#specification-of-the-attribute-descriptor-api
-    '''
-    def __init__(self, logger, level=logging.DEBUG, doc=None):
-        r'''Initialize with logger.
-        '''
-        self.__logger = logger
-        self.__level = level
-        self.__objclass__, self.__name__, self.__doc__ = None, None, doc # PEP-252
-
-    def __set_name__(self, owner, name):
-        r"""Called at the time the owning class owner is created. The descriptor has been assigned to name.
-        
-        __set_name__() is only called implicitly as part of the type constructor, so it will need to be called explicitly with the appropriate parameters when a descriptor is added to a class after initial creation.
-        """
-        self.__objclass__, self.__name__ = owner, name
-        if self.__doc__ is None:
-            self.__doc__ = repr(self)
-        self.__logger.log(self.__level, f"{self} constructed")
-
-    def _check_set_name(self, instance):
-        r"""Check self.__set_name__() is called.
-        """
-        if not all((self.__objclass__, self.__name__)):
-            raise AttributeError(f"{self.__class__.__qualname__}().__set_name__() not called for instance {instance!r} of type {type(instance)}")
-
-    def __repr__(self):
-        r"""Representation as 'OwnerName.AttributeName=SelfClassName()'.
-        """
-        return f"<{self.__objclass__.__qualname__}.{self.__name__}={self.__class__.__qualname__}()>"
-
-    def __get__(self, instance, owner=None):
-        self.__logger.log(self.__level, f'{self} getting {instance!r}')
-        self._check_set_name(instance)
-        if instance is None: # class-binding
-            raise AttributeError(f"{self} does not support class-binding!")
-        return instance.__dict__[self]
-
-    def __set__(self, instance, value):
-        self.__logger.log(self.__level, f'{self} setting {instance!r} to {value!r}')
-        self._check_set_name(instance)
-        instance.__dict__[self] = value
-
-    def __delete__(self, instance):
-        self.__logger.log(self.__level, f'{self} del {instance!r}')
-        self._check_set_name(instance)
-        del instance.__dict__[self]
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # main
 if __name__ == "__main__":
@@ -219,24 +162,5 @@ if __name__ == "__main__":
         f(10, 20, 30, z=100)
     except Exception as exc:
         logger.warning(f'caught exception: {reprExc(exc)}')
-
-    logger.info('now demonstrates DataDescriptor')
-
-    class C:
-        a = DataDescriptor(logger=logger, doc='this is a')
-        b = DataDescriptor(logger=logger)
-    c = C()
-    logger.info(f"C.__dict__={C.__dict__}")
-    logger.info(f"c.__dict__={c.__dict__}")
-    c.a = 1
-    logger.info(f"c.__dict__={c.__dict__}")
-    logger.info(f"get c.a is {c.a!r}")
-    del C.a
-    c.a=2
-    logger.info(f"C.__dict__={C.__dict__}")
-    logger.info(f"c.__dict__={c.__dict__}")
-    logger.info(f"get c.a is {c.a!r}")
-
-
 
     logger.info('here we finished demonstration')
