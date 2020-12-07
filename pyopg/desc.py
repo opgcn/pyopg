@@ -42,7 +42,8 @@ class DataDescriptor:
         self._check_set_name()
         if self.__doc__ is None:
             self.__doc__ = repr(self)
-        self._log(f"{self} constructed")
+        if self.__logger:
+            self.__logger.log(self.__level, f"{self} constructed")
 
     def _check_set_name(self):
         r"""Check self.__set_name__() is called.
@@ -51,12 +52,6 @@ class DataDescriptor:
         """
         if None in (self.__objclass__, self.__name__):
             raise AttributeError(f"{self.__class__.__qualname__}().__set_name__() not worked appropriatly!")
-
-    def _log(self, *t, **d):
-        r"""Logging if logger is not None:
-        """
-        if self.__logger is not None:
-            return self.__logger.log(self.__level, *t, **d)
 
     def __repr__(self):
         r"""Representation as '<OwnerName.AttributeName=SelfClassName(ImportantArgs)>'.
@@ -68,28 +63,34 @@ class DataDescriptor:
 
     def __get__(self, instance, owner=None):
         self._check_set_name()
-        self._log(f'{self} excuting __get__(instance={instance!r},owner={owner!r})')
+        if self.__logger:
+            dArgs = {'instance':instance, 'owner':owner}
+            self.__logger.log(self.__level, f'{self} excuting __get__({log.reprArgs(**dArgs)})')
         if instance is None: # class-binding access
             return self
         try:
             return instance.__dict__[self]
         except KeyError as exc:
             if self.__default is self.DISABLE:
-                raise AttributeError(f"{self} not set yet for instance {instance!r}") from exc
+                raise AttributeError(f"{self} not found for instance {instance!r}") from None
             return self.__default
 
     def __set__(self, instance, value):
         self._check_set_name()
-        self._log(f'{self} excuting __set__(instance={instance!r},value={value!r})')
+        if self.__logger:
+            dArgs = {'instance':instance, 'value':value}
+            self.__logger.log(self.__level, f'{self} excuting __set__({log.reprArgs(**dArgs)})')
         instance.__dict__[self] = value
 
     def __delete__(self, instance):
         self._check_set_name()
-        self._log(f'{self} excuting __delete__(instance={instance!r})')
+        if self.__logger:
+            dArgs = {'instance':instance}
+            self.__logger.log(self.__level, f'{self} excuting __delete__({log.reprArgs(**dArgs)})')
         try:
             del instance.__dict__[self]
         except KeyError as exc:
-            raise AttributeError(f"{self} not set yet for instance {instance!r}") from exc
+            raise AttributeError(f"{self} not found for instance {instance!r}") from None
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # main
