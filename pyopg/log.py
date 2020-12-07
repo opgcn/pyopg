@@ -22,27 +22,27 @@ fmt_default = "[{asctime}][{module}:{funcName}:{lineno}][{levelname}][{name}] {m
 
 handler_color = logging.StreamHandler()
 handler_color.setFormatter(logging.Formatter(style='{', fmt=fmt_default.format(
-    asctime     = color.Seq(color.STY.RESET,  color.BG.B_BLACK,   color.FG.WHITE  )('{asctime}'),
-    module      = color.Seq(color.STY.BOLD,   color.BG.B_BLACK,   color.FG.GREEN  )('{module}'),
-    funcName    = color.Seq(color.STY.BOLD,   color.BG.B_BLACK,   color.FG.GREEN  )('{funcName}'),
-    lineno      = color.Seq(color.STY.BOLD,   color.BG.B_BLACK,   color.FG.GREEN  )('{lineno}'),
-    levelname   = color.Seq(color.STY.BOLD,   color.BG.B_BLACK,   color.FG.YELLOW )('{levelname}'),
-    name        = color.Seq(color.STY.BOLD,   color.BG.B_BLACK,   color.FG.CYAN   )('{name}'),
+    asctime     = color.Seq(color.STY.UNDER,  color.BG.B_BLACK, color.FG.WHITE)('{asctime}'),
+    module      = color.Seq(color.STY.BOLD,   color.BG.B_BLACK, color.FG.GREEN)('{module}'),
+    funcName    = color.Seq(color.STY.BOLD,   color.BG.B_BLACK, color.FG.GREEN)('{funcName}'),
+    lineno      = color.Seq(color.STY.BOLD,   color.BG.B_BLACK, color.FG.GREEN)('{lineno}'),
+    levelname   = color.Seq(color.STY.BLINK,  color.BG.B_BLACK, color.FG.RED  )('{levelname}'),
+    name        = color.Seq(color.STY.ITALIC, color.BG.B_BLACK, color.FG.CYAN )('{name}'),
     message     = '{message}',
 )))
 
 def reprArgs(*t, **d):
     r'''Return arguments' representation string as in function invocation.
     '''
-    return ', '.join(itertools.chain( # chain generators, then join with comma
-        (repr(arg) for arg in t),   # generator of positional arguments
-        (f'{k}={v!r}' for (k, v) in d.items()), # generator of keyword arguments
+    return ','.join(itertools.chain( # chain generators, then join with comma
+        map(repr, t),   # generator of positional arguments
+        ( f'{k}={v!r}' for k, v in d.items() ), # generator of keyword arguments
     ))
 
 def reprExc(exc):
     r"""Return a detailed representation string of an exception instance.
     """
-    return f"repr={exc!r} context={exc.__context__!r} suppress_context={exc.__suppress_context__!r} cause={exc.__cause__!r}"
+    return f"{exc!r}<context={exc.__context__!r},suppress={exc.__suppress_context__!r},cause={exc.__cause__!r}>"
 
 class Tracker(contextlib.ContextDecorator):
     r"""A tracker to log starting and finishing as a context manager or a decorator.
@@ -102,7 +102,7 @@ def context(logger, level=logging.DEBUG):
     try:
         yield ctx
     except Exception as exc:
-        logger.log(level, f'{ctx} raised: {exc!r}')
+        logger.log(level, f'{ctx} raised: {reprExc(exc)}')
         raise # otherwise the contextlib.contextmanager will indicate to exception has been handled
     else:
         logger.log(level, f'{ctx} exited')
@@ -119,7 +119,7 @@ def decorator(logger, level=logging.DEBUG):
             try:
                 result = func(*t, **d) # original func() is 'wrapped function'
             except Exception as exc:
-                logger.log(level, f'{invocation} raised: {exc!r}')
+                logger.log(level, f'{invocation} raised: {reprExc(exc)}')
                 raise
             else:
                 logger.log(level, f'{invocation} returned: {result!r}')
