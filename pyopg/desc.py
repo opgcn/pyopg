@@ -16,8 +16,9 @@ import logging
 from . import log
     
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-class DataDescriptor:
-    r'''A data-descriptor with default-value, logging abilities.
+
+class DataDesc:
+    r'''A data descriptor with default-value, logging abilities.
 
     - https://docs.python.org/zh-cn/3/reference/datamodel.html#descriptors
     - https://docs.python.org/zh-cn/3/howto/descriptor.html
@@ -28,22 +29,24 @@ class DataDescriptor:
     # flag to disable abilities
     DISABLE = object()
 
-    def __init__(self, default=DISABLE, doc=None, logger=None, level=logging.DEBUG):
+    def __init__(self, default=DISABLE, doc=None, logger=None, level=logging.DEBUG, actual_prefix='__'):
         r'''Initialize with default value.
         '''
-        self.__default = default
+        self._default = default
         self.__objclass__, self.__name__, self.__doc__ = None, None, doc # PEP-252
-        self.__logger, self.__level = logger, level
+        self._actual_prefix = actual_prefix # https://docs.python.org/zh-cn/3/howto/descriptor.html#managed-attributes
+        self._logger, self._level = logger, level
 
     def __set_name__(self, owner, name):
         r"""Called at the time the owning class owner is created. The descriptor has been assigned to name.
         """
         self.__objclass__, self.__name__ = owner, name
         self._check_set_name()
+        self._name = self._actual_prefix + name # actual data stored as a private attribute in instance dictionary
         if self.__doc__ is None:
             self.__doc__ = repr(self)
-        if self.__logger:
-            self.__logger.log(self.__level, f"{self} constructed")
+        if self._logger:
+            self._logger.log(self._level, f"{self} constructed")
 
     def _check_set_name(self):
         r"""Check self.__set_name__() is called.
@@ -57,40 +60,35 @@ class DataDescriptor:
         r"""Representation as '<OwnerName.AttributeName=SelfClassName(ImportantArgs)>'.
         """
         dArgs = dict()
-        if self.__default is not self.DISABLE:
-            dArgs['default'] = self.__default
+        if self._default is not self.DISABLE:
+            dArgs['default'] = self._default
         return f"<{self.__objclass__.__qualname__}.{self.__name__}={self.__class__.__qualname__}({log.reprArgs(**dArgs)})>"
 
     def __get__(self, instance, owner=None):
         self._check_set_name()
-        if self.__logger:
+        if self._logger:
             dArgs = {'instance':instance, 'owner':owner}
-            self.__logger.log(self.__level, f'{self} excuting __get__({log.reprArgs(**dArgs)})')
+            self._logger.log(self._level, f'{self}.__get__({log.reprArgs(**dArgs)}) excuting')
         if instance is None: # class-binding access
             return self
-        try:
-            return instance.__dict__[self]
-        except KeyError as exc:
-            if self.__default is self.DISABLE:
-                raise AttributeError(f"{self} not found for instance {instance!r}") from None
-            return self.__default
+        elif self._default is self.DISABLE:
+            return getattr(instance, self._name)
+        else:
+            return getattr(instance, self._name, self._default)
 
     def __set__(self, instance, value):
         self._check_set_name()
-        if self.__logger:
+        if self._logger:
             dArgs = {'instance':instance, 'value':value}
-            self.__logger.log(self.__level, f'{self} excuting __set__({log.reprArgs(**dArgs)})')
-        instance.__dict__[self] = value
+            self._logger.log(self._level, f'{self}.__set__({log.reprArgs(**dArgs)}) excuting')
+        setattr(instance, self._name, value)
 
     def __delete__(self, instance):
         self._check_set_name()
-        if self.__logger:
+        if self._logger:
             dArgs = {'instance':instance}
-            self.__logger.log(self.__level, f'{self} excuting __delete__({log.reprArgs(**dArgs)})')
-        try:
-            del instance.__dict__[self]
-        except KeyError as exc:
-            raise AttributeError(f"{self} not found for instance {instance!r}") from None
+            self._logger.log(self._level, f'{self}.__delete__({log.reprArgs(**dArgs)}) excuting')
+        delattr(instance, self._name)
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # main
@@ -101,27 +99,27 @@ if __name__ == "__main__":
     logger.addHandler(log.handler_color) # as app
     logger.setLevel(logging.DEBUG)
 
-    logger.info("now demonstrates DataDescriptor's construction")
+    logger.info("now demonstrates DataDesc's construction")
     class C:
-        a = DataDescriptor(logger=logger, doc='this is a')
-        b = DataDescriptor(logger=logger, default='$default-value-of-b$')
+        a = DataDesc(logger=logger, doc='this is a')
+        b = DataDesc(logger=logger, default='$default-value-of-b$')
     c = C()
     logger.info(f"C.__dict__={C.__dict__}")
     logger.info(f"c.__dict__={c.__dict__}")
 
-    logger.info("now demonstrates DataDescriptor's non-default non-set-yet access")
+    logger.info("now demonstrates DataDesc's non-default non-set-yet access")
     try:
         c.a
     except Exception as exc:
         logger.warning(f"caught exception: {log.reprExc(exc)}")
 
-    logger.info("now demonstrates DataDescriptor's non-set-yet deletion")
+    logger.info("now demonstrates DataDesc's non-set-yet deletion")
     try:
         del c.b
     except Exception as exc:
         logger.warning(f"caught exception: {log.reprExc(exc)}")
 
-    logger.info("now demonstrates DataDescriptor's normal access")
+    logger.info("now demonstrates DataDesc's normal access")
     c.a = 10
     logger.info(f"get c.a is {c.a!r}")
     logger.info(f"get c.b is {c.b!r}")
@@ -134,7 +132,7 @@ if __name__ == "__main__":
     logger.info(f"now c.__dict__={c.__dict__}")
     logger.info(f"get C.a is {C.a!r}")
 
-    logger.info("now demonstrates DataDescriptor's deletion")
+    logger.info("now demonstrates DataDesc's deletion")
     del c.b
     logger.info(f"get c.b is {c.b!r}")
     logger.info(f"now c.__dict__={c.__dict__}")
@@ -145,3 +143,5 @@ if __name__ == "__main__":
         C.a
     except Exception as exc:
         logger.warning(f"access 'C.a' caught exception: {log.reprExc(exc)}")
+        
+    print(vars(C)['b'], C.b)

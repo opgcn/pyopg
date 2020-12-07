@@ -73,30 +73,30 @@ class Context(contextlib.ContextDecorator):
     def __init__(self, logger=None, level=logging.DEBUG, *t, **d):
         r"""Initialization.
         """
-        self.__logger, self.__level = logger, level
-        self.__frame_info = inspect.stack()[1]
+        self._logger, self._level = logger, level
+        self._frame_info = inspect.stack()[1]
         super().__init__(*t, **d)
 
     def __repr__(self):
         r"""Representation.
         """
-        return f"<{self.__class__.__qualname__}()@{self.__frame_info.frame.f_globals.get('__name__')}:{self.__frame_info.lineno}>"
+        return f"<{self.__class__.__qualname__}()@{self._frame_info.frame.f_globals.get('__name__')}:{self._frame_info.lineno}>"
 
     def __enter__(self):
         r"""Enter method returns self for representation in with clause.
         """
-        if self.__logger:
-            self.__logger.log(self.__level, f'{self} entering')
+        if self._logger:
+            self._logger.log(self._level, f'{self} entering')
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         r"""Exit method retains its optional exception handling even when used as a decorator.
         """
-        if self.__logger:
+        if self._logger:
             if exc_val:
-                self.__logger.log(self.__level, f'{self} raised: {reprExc(exc_val)}')
+                self._logger.log(self._level, f'{self} raised: {reprExc(exc_val)}')
             else:
-                self.__logger.log(self.__level, f'{self} exited')
+                self._logger.log(self._level, f'{self} exited')
         return False
 
 @contextlib.contextmanager
