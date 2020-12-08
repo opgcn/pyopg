@@ -13,7 +13,7 @@ from . import __version__, __author__, __date__
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 import logging
 
-from . import log
+from . import debug, log
     
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -57,18 +57,17 @@ class DataDesc:
             raise AttributeError(f"{self.__class__.__qualname__}().__set_name__() not worked appropriatly!")
 
     def __repr__(self):
-        r"""Representation as '<OwnerName.AttributeName=SelfClassName(ImportantArgs)>'.
+        r"""Representation.
         """
-        dArgs = dict()
-        if self._default is not self.DISABLE:
-            dArgs['default'] = self._default
-        return f"<{self.__objclass__.__qualname__}.{self.__name__}={self.__class__.__qualname__}({log.reprArgs(**dArgs)})>"
+        if self._default is self.DISABLE:
+            return debug.reprDesc(self)
+        else:
+            return debug.reprDesc(self, default=self._default)
 
     def __get__(self, instance, owner=None):
         self._check_set_name()
         if self._logger:
-            dArgs = {'instance':instance, 'owner':owner}
-            self._logger.log(self._level, f'{self}.__get__({log.reprArgs(**dArgs)}) excuting')
+            self._logger.log(self._level, f'{debug.reprSelfMethod(self.__get__, instance=instance, owner=owner)} excuting')
         if instance is None: # class-binding access
             return self
         elif self._default is self.DISABLE:
@@ -80,15 +79,16 @@ class DataDesc:
         self._check_set_name()
         if self._logger:
             dArgs = {'instance':instance, 'value':value}
-            self._logger.log(self._level, f'{self}.__set__({log.reprArgs(**dArgs)}) excuting')
+            self._logger.log(self._level, f'{debug.reprSelfMethod(self.__set__, instance=instance, value=value)} excuting')
         setattr(instance, self._name, value)
 
     def __delete__(self, instance):
         self._check_set_name()
         if self._logger:
             dArgs = {'instance':instance}
-            self._logger.log(self._level, f'{self}.__delete__({log.reprArgs(**dArgs)}) excuting')
+            self._logger.log(self._level, f'{debug.reprSelfMethod(self.__delete__, instance=instance)} excuting')
         delattr(instance, self._name)
+
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # main
@@ -111,13 +111,13 @@ if __name__ == "__main__":
     try:
         c.a
     except Exception as exc:
-        logger.warning(f"caught exception: {log.reprExc(exc)}")
+        logger.warning(f"caught exception: {debug.reprExc(exc)}")
 
     logger.info("now demonstrates DataDesc's non-set-yet deletion")
     try:
         del c.b
     except Exception as exc:
-        logger.warning(f"caught exception: {log.reprExc(exc)}")
+        logger.warning(f"caught exception: {debug.reprExc(exc)}")
 
     logger.info("now demonstrates DataDesc's normal access")
     c.a = 10
@@ -142,6 +142,6 @@ if __name__ == "__main__":
     try:
         C.a
     except Exception as exc:
-        logger.warning(f"access 'C.a' caught exception: {log.reprExc(exc)}")
+        logger.warning(f"access 'C.a' caught exception: {debug.reprExc(exc)}")
         
     print(vars(C)['b'], C.b)

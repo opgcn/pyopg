@@ -11,9 +11,9 @@ This module provides logging utils for human beings.
 from . import __version__, __author__, __date__
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-import functools, itertools, contextlib, inspect, logging
+import functools, itertools, contextlib, logging
 
-from . import color
+from . import debug, color
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -31,20 +31,6 @@ handler_color.setFormatter(logging.Formatter(style='{', fmt=fmt_default.format(
     message     = '{message}',
 )))
 
-def reprArgs(*t, **d):
-    r'''Return arguments' representation string as in function invocation.
-    '''
-    return ','.join(itertools.chain( # chain generators, then join with comma
-        map(repr, t),   # iterator of positional arguments
-        ( f'{k}={v!r}' for k, v in d.items() ), # generator of keyword arguments
-    ))
-
-def reprExc(exc):
-    r"""Return a detailed representation string of an exception instance.
-    """
-    dAttrs = {'context':exc.__context__, 'suppress':exc.__suppress_context__, 'cause':exc.__cause__}
-    return f"{exc!r}<{reprArgs(**dAttrs)}>"
-
 def decorator(logger=None, level=logging.DEBUG):
     r'''A decorator wraps longging on function call's begin and end with given logger and level.
     '''
@@ -54,15 +40,15 @@ def decorator(logger=None, level=logging.DEBUG):
             return func # no wraps needed
         @functools.wraps(func)
         def _wrapper(*t, **d):
-            _invocation = f"{func.__module__}.{func.__qualname__}({reprArgs(*t, **d)})"
-            logger.log(level, f'{_invocation} starting')
+            repr_call = debug.reprCall(func, *t, **d)
+            logger.log(level, f'{repr_call} starting')
             try:
                 result = func(*t, **d) # original func() is 'wrapped function'
             except Exception as exc: # intercept any exception for logging
-                logger.log(level, f'{_invocation} raised: {reprExc(exc)}')
+                logger.log(level, f'{repr_call} raised: {debug.reprExc(exc)}')
                 raise # reraise exception of original wrapped out this wrapper
             else: # no exception then log what returned
-                logger.log(level, f'{_invocation} returned: {result!r}')
+                logger.log(level, f'{repr_call} returned: {result!r}')
                 return result # from _wrapper()
         return _wrapper # from _inner_decorator()    
     return _inner_decorator # from decorator()
@@ -74,13 +60,13 @@ class Context(contextlib.ContextDecorator):
         r"""Initialization.
         """
         self._logger, self._level = logger, level
-        self._frame_info = inspect.stack()[1]
         super().__init__(*t, **d)
 
     def __repr__(self):
         r"""Representation.
         """
-        return f"<{self.__class__.__qualname__}()@{self._frame_info.frame.f_globals.get('__name__')}:{self._frame_info.lineno}>"
+        repr_loc = debug.reprFrameLoc(index=2)
+        return f"{debug.reprSelf(self)}@{repr_loc}" 
 
     def __enter__(self):
         r"""Enter method returns self for representation in with clause.
@@ -94,30 +80,30 @@ class Context(contextlib.ContextDecorator):
         """
         if self._logger:
             if exc_val:
-                self._logger.log(self._level, f'{self} raised: {reprExc(exc_val)}')
+                self._logger.log(self._level, f'{self} raised: {debug.reprExc(exc_val)}')
             else:
                 self._logger.log(self._level, f'{self} exited')
         return False
 
 @contextlib.contextmanager
 def context(logger=None, level=logging.DEBUG):
-    r'''A context manager supports longging on code block begin and end with given logger, level and name.
+    r'''A context manager supports longging on code block begin and end with given logger, level.
     
     Deprecated: use `Context` class instead.
     '''
-    frameInfo = inspect.stack()[2]
-    ctx = f"context()@{frameInfo.frame.f_globals.get('__name__')}:{frameInfo.lineno}"
+    _repr_loc = debug.reprFrameLoc(index=3)
+    _repr = f"with@{_repr_loc}"
     if logger:
-        logger.log(level, f'{ctx} entered')
+        logger.log(level, f'{_repr} entered')
     try:
-        yield ctx
+        yield _repr
     except Exception as exc:
         if logger:
-            logger.log(level, f'{ctx} raised: {reprExc(exc)}')
+            logger.log(level, f'{_repr} raised: {debug.reprExc(exc)}')
         raise # otherwise the contextlib.contextmanager will indicate to exception has been handled
     else:
         if logger:
-            logger.log(level, f'{ctx} exited')
+            logger.log(level, f'{_repr} exited')
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # main
@@ -140,7 +126,7 @@ if __name__ == "__main__":
         logger.info(f"__name__ of f()'s wrapper is {f.__name__!r}")
         f(10, 20, 30, z=100)
     except Exception as exc:
-        logger.warning(f'caught exception: {reprExc(exc)}')
+        logger.warning(f'caught exception: {debug.reprExc(exc)}')
         
     logger.info('now demonstrates context manager')
     def f():
@@ -150,5 +136,5 @@ if __name__ == "__main__":
                 raise RuntimeWarning('code block raised this exception')
                 print("this satement will never run!")
         except Exception as exc:
-            logger.warning(f'caught exception: {reprExc(exc)}')
+            logger.warning(f'caught exception: {debug.reprExc(exc)}')
     f()

@@ -20,6 +20,8 @@ if not hasattr(functools, 'cached_property'):
     from . import new3
     functools.cached_property = new3.cached_property
 
+from . import debug
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 @enum.unique
@@ -132,7 +134,7 @@ class Seq(bytes):
     def __repr__(self):
         r"""Short description of self.
         """
-        return f"{self.__class__.__qualname__}({','.join(map(str, self))})"
+        return debug.reprSelf(self, *tuple(self))
 
     def __add__(self, other):
         r"""Implement self + other.
@@ -152,12 +154,12 @@ def get_cheet_sheet_16(styles=STY, backgrounds=BG, foregrounds=FG, col_width=16,
     seqTitle=Seq(STY.BOLD, STY.INVERT)
     table_width=(len(styles)+1)*(col_width+1)-1
     with io.StringIO(newline=None) as sio:
-        sio.write(seqTitle(f"{'ANSI 16-Color Cheet Sheet'.center(table_width)}\n"))
+        sio.write(seqTitle(f"{('ANSI 16-Color Cheet Sheet @ '+repr(seqTitle)).center(table_width)}\n"))
         sio.write(seqKey(f"\n@styles: {styles}\n"))
         sio.write(seqKey(f"\n@backgrounds: {backgrounds}\n"))
         sio.write(seqKey(f"\n@foregrounds: {foregrounds}"))
         for bg in backgrounds:
-            sio.write(seqTitle(f"\n\n{'Table of @background = {bg!r}'.center(table_width)}\n"))
+            sio.write(seqTitle(f"\n\n{('Table of @background = '+repr(bg)).center(table_width)}\n"))
             sio.write(seqKey(f"{'@FG & @STY':^{col_width}}"))
             for sty in styles:
                 sio.write(f"{col_sep}{sty!r:^{col_width}}")
