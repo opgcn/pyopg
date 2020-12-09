@@ -44,8 +44,8 @@ def reprDef(obj):
     """
     qualname = getattr(obj, '__qualname__', None)
     name = qualname if qualname else obj.__name__
-    modulename = getattr(obj, '__module__', None)
-    return f"{modulename}.{name}" if modulename else name
+    module = getattr(obj, '__module__', None)
+    return f"{module}.{name}" if module else name
 
 def reprCall(obj, *t, **d):
     r"""Representation of a object's invocation.
@@ -73,7 +73,7 @@ def reprDesc(self, *t, **d):
     
     e.g. <owner_module_name.OwnerClassName.attr_name>@desc_module_name.DescClassName(args)
     """
-    return f"<{reprDef(self.__objclass__)}.{self.__name__}> @ {reprSelf(self, *t, **d)}"
+    return f"<{reprDef(self.__objclass__)}.{self.__name__}>:{reprSelf(self, *t, **d)}"
     
 def reprExc(exc):
     r"""Representation of an exception instance with import attributes.
@@ -81,7 +81,7 @@ def reprExc(exc):
     e.g. repr_exception@(important_attributes_as_args_format)
     """
     repr_args = reprArgs(context=exc.__context__, suppress=exc.__suppress_context__, cause=exc.__cause__)
-    return f"{exc!r}@{repr_args}"
+    return f"{exc!r}:{repr_args}"
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # main

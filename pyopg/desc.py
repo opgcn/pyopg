@@ -144,4 +144,3 @@ if __name__ == "__main__":
     except Exception as exc:
         logger.warning(f"access 'C.a' caught exception: {debug.reprExc(exc)}")
         
-    print(vars(C)['b'], C.b)

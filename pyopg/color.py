@@ -20,8 +20,6 @@ if not hasattr(functools, 'cached_property'):
     from . import new3
     functools.cached_property = new3.cached_property
 
-from . import debug
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 @enum.unique
@@ -134,7 +132,7 @@ class Seq(bytes):
     def __repr__(self):
         r"""Short description of self.
         """
-        return debug.reprSelf(self, *tuple(self))
+        return self.__class__.__qualname__ + repr(tuple(self))
 
     def __add__(self, other):
         r"""Implement self + other.
