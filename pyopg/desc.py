@@ -13,7 +13,7 @@ from . import __version__, __author__, __date__
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 import logging
 
-from . import debug, log
+from . import debug
     
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -67,7 +67,7 @@ class DataDesc:
     def __get__(self, instance, owner=None):
         self._check_set_name()
         if self._logger:
-            self._logger.log(self._level, f'{debug.reprSelfMethod(self.__get__, instance=instance, owner=owner)} excuting')
+            self._logger.log(self._level, f'{debug.reprCall(self.__get__, instance=instance, owner=owner)} excuting')
         if instance is None: # class-binding access
             return self
         elif self._default is self.DISABLE:
@@ -79,14 +79,14 @@ class DataDesc:
         self._check_set_name()
         if self._logger:
             dArgs = {'instance':instance, 'value':value}
-            self._logger.log(self._level, f'{debug.reprSelfMethod(self.__set__, instance=instance, value=value)} excuting')
+            self._logger.log(self._level, f'{debug.reprCall(self.__set__, instance=instance, value=value)} excuting')
         setattr(instance, self._name, value)
 
     def __delete__(self, instance):
         self._check_set_name()
         if self._logger:
             dArgs = {'instance':instance}
-            self._logger.log(self._level, f'{debug.reprSelfMethod(self.__delete__, instance=instance)} excuting')
+            self._logger.log(self._level, f'{debug.reprCall(self.__delete__, instance=instance)} excuting')
         delattr(instance, self._name)
 
 
@@ -96,13 +96,14 @@ if __name__ == "__main__":
     # demonstrates utils
     logger = logging.getLogger(__name__)
     logger.addHandler(logging.NullHandler()) # as lib
-    logger.addHandler(log.handler_color) # as app
+    logger.addHandler(debug.LOG_HANDLER_COLOR) # as app
     logger.setLevel(logging.DEBUG)
 
     logger.info("now demonstrates DataDesc's construction")
     class C:
         a = DataDesc(logger=logger, doc='this is a')
         b = DataDesc(logger=logger, default='$default-value-of-b$')
+        __repr__ = lambda self: f"<i-am-an-instance-of-class-{self.__class__.__qualname__}>"
     c = C()
     logger.info(f"C.__dict__={C.__dict__}")
     logger.info(f"c.__dict__={c.__dict__}")

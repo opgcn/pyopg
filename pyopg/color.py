@@ -132,7 +132,7 @@ class Seq(bytes):
     def __repr__(self):
         r"""Short description of self.
         """
-        return self.__class__.__qualname__ + repr(tuple(self))
+        return f"{self.__class__.__module__}.{self.__class__.__qualname__}{tuple(self)!r}"
 
     def __add__(self, other):
         r"""Implement self + other.
